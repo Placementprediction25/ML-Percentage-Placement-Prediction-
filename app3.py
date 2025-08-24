@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Load pipeline and model
-pipeline = joblib.load("pipeline.joblib")   # preprocessing pipeline
+pipeline = joblib.load("Pipeline.joblib")   # preprocessing pipeline
 model = joblib.load("Placement.joblib")     # trained ML model
 
 st.set_page_config(page_title="Career Predictor 🎓💼", layout="wide")
