@@ -1,0 +1,2316 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "8d05aa5c-b765-49fd-ac9a-273ffd098605",
+   "metadata": {},
+   "source": [
+    "# Placement Prediction Model\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "67c12cc7-e85b-4f45-aae9-2a9efb601569",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "1e5a2988-afe0-48ef-813a-5176056eaf86",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataset = pd.read_csv(\"data.csv\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "be256c7f-6d4e-4e35-bed1-7117341b1b6d",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "#dataset.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "676a8e18-0c87-4df4-af0a-51e0d119c49f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.tail()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "0dda3e53-b88a-4c2c-9baf-0c74e2173b1c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.head(500)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "98b4968c-e61a-4a35-9036-e519362027c7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "046c653e-923c-4bed-80e8-c819c1be4dd0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.describe()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "e89ce9c3-d3bc-40e4-ab4d-6b30d7bbb9b1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset['Projects'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "c49effc0-7b9d-40d1-b86b-ae2ee9eb1ded",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#%matplotlib inline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "5977482e-eee8-4945-a7f3-6e63ad9b812d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#import matplotlib.pyplot as plt"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "87554105-f7f1-4420-98f0-f6b96bbe94ee",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.hist(bins=50, figsize=(20,15), color=\"indigo\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d454dc12-cb67-4f7c-8713-2a0c4cea023a",
+   "metadata": {},
+   "source": [
+    "## Train - Test Split "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "9e6378a9-3792-4092-a7f9-4feecd2ceb7f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "def split_train_test(data,test_ratio):\n",
+    "    np.random.seed(42)\n",
+    "    shuffled = np.random.permutation(len(data))\n",
+    "    print(shuffled)\n",
+    "    test_set_size = int(len(data)*test_ratio)\n",
+    "    test_indices = shuffled[:test_set_size]\n",
+    "    train_indices = shuffled[test_set_size:]\n",
+    "    return data.iloc[train_indices], data.iloc[test_indices] \n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "e98f58a5-e8b0-41bf-a8c6-3d530e458336",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[ 107 5484 6998 ... 5390  860 7270]\n",
+      "rows in test set: 2200\n",
+      "rows in train set: 8800\n"
+     ]
+    }
+   ],
+   "source": [
+    "train_set, test_set =  split_train_test(dataset,0.2)\n",
+    "print(f\"rows in test set: {len(test_set)}\")\n",
+    "print(f\"rows in train set: {len(train_set)}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "4fff9331-31c0-4d27-aabe-58f079094422",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import StratifiedShuffleSplit\n",
+    "split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)\n",
+    "for train_index, test_index in split.split(dataset, dataset['Projects']):\n",
+    "    strat_train_set = dataset.loc[train_index]\n",
+    "    strat_test_set = dataset.loc[test_index]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "ab816afb-3805-49e2-ba9c-03198a2aac00",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Projects\n",
+       "1    610\n",
+       "2    607\n",
+       "3    379\n",
+       "0    292\n",
+       "4    201\n",
+       "5     75\n",
+       "6     25\n",
+       "7      9\n",
+       "8      1\n",
+       "9      1\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "strat_test_set['Projects'].value_counts()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "8e539679-465d-4d29-a651-72c1091e995c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Projects\n",
+       "1     2439\n",
+       "2     2426\n",
+       "3     1517\n",
+       "0     1170\n",
+       "4      804\n",
+       "5      302\n",
+       "6       98\n",
+       "7       35\n",
+       "9        4\n",
+       "8        3\n",
+       "10       2\n",
+       "Name: count, dtype: int64"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "strat_train_set['Projects'].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "e83fda7f-bb9e-4bcc-88db-6633479916b8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataset = strat_train_set.copy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cc785fd9-ae2c-4cc9-b394-40fca5f84ff9",
+   "metadata": {},
+   "source": [
+    "## Looking for Correlations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "5577bab4-2dd4-4d3c-a609-ca013fac2493",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "corr_matrix = dataset.corr(numeric_only=True)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "8e006dfc-9a7a-4bc5-9264-85792f39027a",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Probability        1.000000\n",
+       "CGPA               0.439749\n",
+       "Leadership         0.373876\n",
+       "Twelfth            0.319399\n",
+       "Tenth              0.293164\n",
+       "Soft skills        0.291776\n",
+       "Aptitude           0.288113\n",
+       "DSA                0.285898\n",
+       "Internships        0.247024\n",
+       "Extracurricular    0.235437\n",
+       "Lang               0.222741\n",
+       "Projects           0.165447\n",
+       "Certifications     0.163505\n",
+       "Backlogs          -0.173245\n",
+       "Name: Probability, dtype: float64"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "corr_matrix['Probability'].sort_values(ascending=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "c5d9636b-0ac3-4013-a24d-34bfa5c2d6aa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#from pandas.plotting import scatter_matrix\n",
+    "#attributes = [\"CGPA\", \"Probability\", \"Tenth\", \"Backlogs\"]\n",
+    "#scatter_matrix(dataset[attributes], figsize = (12,8))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "292015bf-aeb7-4cd7-b1ad-1983cb477868",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.plot(kind = \"scatter\", x=\"CGPA\", y=\"Probability\", alpha=0.8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "a0338165-6078-4e80-9512-0076ce462925",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.plot(kind = \"scatter\", x=\"Projects\", y=\"Probability\", alpha=0.8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "830f89f6-396c-4bdb-b977-2d739c660b0b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.plot(kind = \"scatter\", x=\"Internships\", y=\"Probability\", alpha=0.8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "5a2150d2-5f74-4c9e-a45a-3ab966ed2b2a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.plot(kind = \"scatter\", x=\"Leadership\", y=\"Probability\", alpha=0.8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "bfd2b129-f3d6-4345-9718-cd5137168f18",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset.plot(kind = \"scatter\", x=\"Certifications\", y=\"Probability\", alpha=0.8)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0df01a22-5a75-41ca-a089-ac1c2798d430",
+   "metadata": {},
+   "source": [
+    "## Trying new Attribute combinations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "74c1bc90-2e8d-4e98-9512-5b87375ed3cb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset[\"CGPA/langauges\"] = dataset[\"CGPA\"]/dataset[\"Lang\"]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "7d4dc9dc-15bf-409c-835a-75f7d3962eb9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataset = strat_train_set.drop(\"Probability\", axis=1)\n",
+    "dataset_labels = strat_train_set[\"Probability\"].copy()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b09fba78-2cd4-4a8f-ac8a-d04f4dbaa2b6",
+   "metadata": {},
+   "source": [
+    "## Missing Attributes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "ce11e5d7-4958-43e3-b67c-776a84bf65ca",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#to take care of missing aatributes\n",
+    "#1. to get rid of the missing datapoints\n",
+    "#2. to get res of the whole attribute \n",
+    "#3. give the value to the missing datapoint (0,mean,meadian) to calculate this we can use the imputer from sklearn\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "97d2c68f-d9fe-4735-ab56-ce81cece2ccf",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.impute import SimpleImputer\n",
+    "numeric_data = dataset.select_dtypes(include=['int64', 'float64'])\n",
+    "imputer = SimpleImputer(strategy=\"median\")\n",
+    "dataset[numeric_data.columns] = imputer.fit_transform(numeric_data)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "01e4e7d2-f988-4010-b8d0-db72d6a6a02a",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([74.845, 73.21 ,  6.99 ,  1.   ,  2.   , 69.96 , 67.855, 65.44 ,\n",
+       "       59.78 ,  1.   ,  0.   , 64.715,  2.   ])"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "imputer.statistics_"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "06f06deb-406a-4bb5-9049-845acfa35f07",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "X = imputer.transform(dataset[numeric_data.columns])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "eeceecbe-91b0-4593-a529-909afb668b45",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataset_tr = pd.DataFrame(X, columns = dataset[numeric_data.columns].columns)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "4111dfea-8bd9-415e-8efa-d98965cc2550",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Tenth</th>\n",
+       "      <th>Twelfth</th>\n",
+       "      <th>CGPA</th>\n",
+       "      <th>Internships</th>\n",
+       "      <th>Projects</th>\n",
+       "      <th>Aptitude</th>\n",
+       "      <th>Soft skills</th>\n",
+       "      <th>Leadership</th>\n",
+       "      <th>Extracurricular</th>\n",
+       "      <th>Certifications</th>\n",
+       "      <th>Backlogs</th>\n",
+       "      <th>DSA</th>\n",
+       "      <th>Lang</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>count</th>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.00000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>mean</th>\n",
+       "      <td>74.847672</td>\n",
+       "      <td>73.19882</td>\n",
+       "      <td>6.983091</td>\n",
+       "      <td>1.005682</td>\n",
+       "      <td>1.986477</td>\n",
+       "      <td>69.967882</td>\n",
+       "      <td>67.789505</td>\n",
+       "      <td>64.846465</td>\n",
+       "      <td>59.632564</td>\n",
+       "      <td>1.006818</td>\n",
+       "      <td>0.505455</td>\n",
+       "      <td>64.739506</td>\n",
+       "      <td>2.006136</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>std</th>\n",
+       "      <td>10.020561</td>\n",
+       "      <td>11.01168</td>\n",
+       "      <td>0.995434</td>\n",
+       "      <td>0.988726</td>\n",
+       "      <td>1.407987</td>\n",
+       "      <td>14.599343</td>\n",
+       "      <td>14.769466</td>\n",
+       "      <td>19.145721</td>\n",
+       "      <td>19.467978</td>\n",
+       "      <td>0.997188</td>\n",
+       "      <td>0.718763</td>\n",
+       "      <td>19.242520</td>\n",
+       "      <td>1.427160</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>min</th>\n",
+       "      <td>40.000000</td>\n",
+       "      <td>35.00000</td>\n",
+       "      <td>4.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>18.600000</td>\n",
+       "      <td>12.680000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25%</th>\n",
+       "      <td>68.110000</td>\n",
+       "      <td>65.77500</td>\n",
+       "      <td>6.290000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>60.250000</td>\n",
+       "      <td>58.047500</td>\n",
+       "      <td>51.770000</td>\n",
+       "      <td>46.417500</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>51.720000</td>\n",
+       "      <td>1.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>50%</th>\n",
+       "      <td>74.845000</td>\n",
+       "      <td>73.21000</td>\n",
+       "      <td>6.990000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>2.000000</td>\n",
+       "      <td>69.960000</td>\n",
+       "      <td>67.855000</td>\n",
+       "      <td>65.440000</td>\n",
+       "      <td>59.780000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>64.715000</td>\n",
+       "      <td>2.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>75%</th>\n",
+       "      <td>81.632500</td>\n",
+       "      <td>80.71250</td>\n",
+       "      <td>7.670000</td>\n",
+       "      <td>2.000000</td>\n",
+       "      <td>3.000000</td>\n",
+       "      <td>79.972500</td>\n",
+       "      <td>77.970000</td>\n",
+       "      <td>78.532500</td>\n",
+       "      <td>73.032500</td>\n",
+       "      <td>2.000000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>78.182500</td>\n",
+       "      <td>3.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>max</th>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.00000</td>\n",
+       "      <td>10.000000</td>\n",
+       "      <td>5.000000</td>\n",
+       "      <td>10.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>7.000000</td>\n",
+       "      <td>6.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>9.000000</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             Tenth     Twelfth         CGPA  Internships     Projects  \\\n",
+       "count  8800.000000  8800.00000  8800.000000  8800.000000  8800.000000   \n",
+       "mean     74.847672    73.19882     6.983091     1.005682     1.986477   \n",
+       "std      10.020561    11.01168     0.995434     0.988726     1.407987   \n",
+       "min      40.000000    35.00000     4.000000     0.000000     0.000000   \n",
+       "25%      68.110000    65.77500     6.290000     0.000000     1.000000   \n",
+       "50%      74.845000    73.21000     6.990000     1.000000     2.000000   \n",
+       "75%      81.632500    80.71250     7.670000     2.000000     3.000000   \n",
+       "max     100.000000   100.00000    10.000000     5.000000    10.000000   \n",
+       "\n",
+       "          Aptitude  Soft skills   Leadership  Extracurricular  Certifications  \\\n",
+       "count  8800.000000  8800.000000  8800.000000      8800.000000     8800.000000   \n",
+       "mean     69.967882    67.789505    64.846465        59.632564        1.006818   \n",
+       "std      14.599343    14.769466    19.145721        19.467978        0.997188   \n",
+       "min      18.600000    12.680000     0.000000         0.000000        0.000000   \n",
+       "25%      60.250000    58.047500    51.770000        46.417500        0.000000   \n",
+       "50%      69.960000    67.855000    65.440000        59.780000        1.000000   \n",
+       "75%      79.972500    77.970000    78.532500        73.032500        2.000000   \n",
+       "max     100.000000   100.000000   100.000000       100.000000        7.000000   \n",
+       "\n",
+       "          Backlogs          DSA         Lang  \n",
+       "count  8800.000000  8800.000000  8800.000000  \n",
+       "mean      0.505455    64.739506     2.006136  \n",
+       "std       0.718763    19.242520     1.427160  \n",
+       "min       0.000000     0.000000     0.000000  \n",
+       "25%       0.000000    51.720000     1.000000  \n",
+       "50%       0.000000    64.715000     2.000000  \n",
+       "75%       1.000000    78.182500     3.000000  \n",
+       "max       6.000000   100.000000     9.000000  "
+      ]
+     },
+     "execution_count": 33,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset_tr.describe()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "id": "a4256481-842c-4e9a-b299-2a06eab2b72a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#a = dataset.select_dtypes(include=['int64', 'float64'])   understanding the code \n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "1df415b8-848a-4d5c-b4bf-b955e34864b3",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Tenth</th>\n",
+       "      <th>Twelfth</th>\n",
+       "      <th>CGPA</th>\n",
+       "      <th>Branch</th>\n",
+       "      <th>Internships</th>\n",
+       "      <th>Projects</th>\n",
+       "      <th>Aptitude</th>\n",
+       "      <th>Soft skills</th>\n",
+       "      <th>Leadership</th>\n",
+       "      <th>Extracurricular</th>\n",
+       "      <th>Certifications</th>\n",
+       "      <th>Backlogs</th>\n",
+       "      <th>DSA</th>\n",
+       "      <th>Lang</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>4422</th>\n",
+       "      <td>87.55</td>\n",
+       "      <td>88.33</td>\n",
+       "      <td>7.44</td>\n",
+       "      <td>IT</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>68.94</td>\n",
+       "      <td>60.16</td>\n",
+       "      <td>83.39</td>\n",
+       "      <td>91.70</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>62.77</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6423</th>\n",
+       "      <td>76.38</td>\n",
+       "      <td>75.09</td>\n",
+       "      <td>6.27</td>\n",
+       "      <td>ECE</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>83.47</td>\n",
+       "      <td>55.94</td>\n",
+       "      <td>81.45</td>\n",
+       "      <td>59.56</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>82.94</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7701</th>\n",
+       "      <td>63.87</td>\n",
+       "      <td>87.44</td>\n",
+       "      <td>6.97</td>\n",
+       "      <td>CIVIL</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>68.95</td>\n",
+       "      <td>47.27</td>\n",
+       "      <td>88.30</td>\n",
+       "      <td>41.85</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>49.31</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4398</th>\n",
+       "      <td>85.80</td>\n",
+       "      <td>62.86</td>\n",
+       "      <td>7.26</td>\n",
+       "      <td>ECE</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>77.11</td>\n",
+       "      <td>97.35</td>\n",
+       "      <td>82.67</td>\n",
+       "      <td>50.66</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>54.84</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3885</th>\n",
+       "      <td>80.36</td>\n",
+       "      <td>86.99</td>\n",
+       "      <td>6.95</td>\n",
+       "      <td>CIVIL</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>75.21</td>\n",
+       "      <td>100.00</td>\n",
+       "      <td>50.88</td>\n",
+       "      <td>55.40</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>31.24</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      Tenth  Twelfth  CGPA Branch  Internships  Projects  Aptitude  \\\n",
+       "4422  87.55    88.33  7.44     IT          0.0       2.0     68.94   \n",
+       "6423  76.38    75.09  6.27    ECE          1.0       2.0     83.47   \n",
+       "7701  63.87    87.44  6.97  CIVIL          1.0       0.0     68.95   \n",
+       "4398  85.80    62.86  7.26    ECE          1.0       2.0     77.11   \n",
+       "3885  80.36    86.99  6.95  CIVIL          1.0       2.0     75.21   \n",
+       "\n",
+       "      Soft skills  Leadership  Extracurricular  Certifications  Backlogs  \\\n",
+       "4422        60.16       83.39            91.70             0.0       0.0   \n",
+       "6423        55.94       81.45            59.56             1.0       0.0   \n",
+       "7701        47.27       88.30            41.85             0.0       0.0   \n",
+       "4398        97.35       82.67            50.66             0.0       0.0   \n",
+       "3885       100.00       50.88            55.40             2.0       1.0   \n",
+       "\n",
+       "        DSA  Lang  \n",
+       "4422  62.77   1.0  \n",
+       "6423  82.94   2.0  \n",
+       "7701  49.31   2.0  \n",
+       "4398  54.84   2.0  \n",
+       "3885  31.24   1.0  "
+      ]
+     },
+     "execution_count": 35,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset.head() # to check that the missing dataset is filled or not "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "496aee2a-ea7a-4e9c-b69c-aeadbaee1e4d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Tenth</th>\n",
+       "      <th>Twelfth</th>\n",
+       "      <th>CGPA</th>\n",
+       "      <th>Internships</th>\n",
+       "      <th>Projects</th>\n",
+       "      <th>Aptitude</th>\n",
+       "      <th>Soft skills</th>\n",
+       "      <th>Leadership</th>\n",
+       "      <th>Extracurricular</th>\n",
+       "      <th>Certifications</th>\n",
+       "      <th>Backlogs</th>\n",
+       "      <th>DSA</th>\n",
+       "      <th>Lang</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>count</th>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.00000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "      <td>8800.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>mean</th>\n",
+       "      <td>74.847672</td>\n",
+       "      <td>73.19882</td>\n",
+       "      <td>6.983091</td>\n",
+       "      <td>1.005682</td>\n",
+       "      <td>1.986477</td>\n",
+       "      <td>69.967882</td>\n",
+       "      <td>67.789505</td>\n",
+       "      <td>64.846465</td>\n",
+       "      <td>59.632564</td>\n",
+       "      <td>1.006818</td>\n",
+       "      <td>0.505455</td>\n",
+       "      <td>64.739506</td>\n",
+       "      <td>2.006136</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>std</th>\n",
+       "      <td>10.020561</td>\n",
+       "      <td>11.01168</td>\n",
+       "      <td>0.995434</td>\n",
+       "      <td>0.988726</td>\n",
+       "      <td>1.407987</td>\n",
+       "      <td>14.599343</td>\n",
+       "      <td>14.769466</td>\n",
+       "      <td>19.145721</td>\n",
+       "      <td>19.467978</td>\n",
+       "      <td>0.997188</td>\n",
+       "      <td>0.718763</td>\n",
+       "      <td>19.242520</td>\n",
+       "      <td>1.427160</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>min</th>\n",
+       "      <td>40.000000</td>\n",
+       "      <td>35.00000</td>\n",
+       "      <td>4.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>18.600000</td>\n",
+       "      <td>12.680000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25%</th>\n",
+       "      <td>68.110000</td>\n",
+       "      <td>65.77500</td>\n",
+       "      <td>6.290000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>60.250000</td>\n",
+       "      <td>58.047500</td>\n",
+       "      <td>51.770000</td>\n",
+       "      <td>46.417500</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>51.720000</td>\n",
+       "      <td>1.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>50%</th>\n",
+       "      <td>74.845000</td>\n",
+       "      <td>73.21000</td>\n",
+       "      <td>6.990000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>2.000000</td>\n",
+       "      <td>69.960000</td>\n",
+       "      <td>67.855000</td>\n",
+       "      <td>65.440000</td>\n",
+       "      <td>59.780000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>64.715000</td>\n",
+       "      <td>2.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>75%</th>\n",
+       "      <td>81.632500</td>\n",
+       "      <td>80.71250</td>\n",
+       "      <td>7.670000</td>\n",
+       "      <td>2.000000</td>\n",
+       "      <td>3.000000</td>\n",
+       "      <td>79.972500</td>\n",
+       "      <td>77.970000</td>\n",
+       "      <td>78.532500</td>\n",
+       "      <td>73.032500</td>\n",
+       "      <td>2.000000</td>\n",
+       "      <td>1.000000</td>\n",
+       "      <td>78.182500</td>\n",
+       "      <td>3.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>max</th>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.00000</td>\n",
+       "      <td>10.000000</td>\n",
+       "      <td>5.000000</td>\n",
+       "      <td>10.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>7.000000</td>\n",
+       "      <td>6.000000</td>\n",
+       "      <td>100.000000</td>\n",
+       "      <td>9.000000</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             Tenth     Twelfth         CGPA  Internships     Projects  \\\n",
+       "count  8800.000000  8800.00000  8800.000000  8800.000000  8800.000000   \n",
+       "mean     74.847672    73.19882     6.983091     1.005682     1.986477   \n",
+       "std      10.020561    11.01168     0.995434     0.988726     1.407987   \n",
+       "min      40.000000    35.00000     4.000000     0.000000     0.000000   \n",
+       "25%      68.110000    65.77500     6.290000     0.000000     1.000000   \n",
+       "50%      74.845000    73.21000     6.990000     1.000000     2.000000   \n",
+       "75%      81.632500    80.71250     7.670000     2.000000     3.000000   \n",
+       "max     100.000000   100.00000    10.000000     5.000000    10.000000   \n",
+       "\n",
+       "          Aptitude  Soft skills   Leadership  Extracurricular  Certifications  \\\n",
+       "count  8800.000000  8800.000000  8800.000000      8800.000000     8800.000000   \n",
+       "mean     69.967882    67.789505    64.846465        59.632564        1.006818   \n",
+       "std      14.599343    14.769466    19.145721        19.467978        0.997188   \n",
+       "min      18.600000    12.680000     0.000000         0.000000        0.000000   \n",
+       "25%      60.250000    58.047500    51.770000        46.417500        0.000000   \n",
+       "50%      69.960000    67.855000    65.440000        59.780000        1.000000   \n",
+       "75%      79.972500    77.970000    78.532500        73.032500        2.000000   \n",
+       "max     100.000000   100.000000   100.000000       100.000000        7.000000   \n",
+       "\n",
+       "          Backlogs          DSA         Lang  \n",
+       "count  8800.000000  8800.000000  8800.000000  \n",
+       "mean      0.505455    64.739506     2.006136  \n",
+       "std       0.718763    19.242520     1.427160  \n",
+       "min       0.000000     0.000000     0.000000  \n",
+       "25%       0.000000    51.720000     1.000000  \n",
+       "50%       0.000000    64.715000     2.000000  \n",
+       "75%       1.000000    78.182500     3.000000  \n",
+       "max       6.000000   100.000000     9.000000  "
+      ]
+     },
+     "execution_count": 36,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset.describe()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8e867bc5-d4e6-46d1-bb73-cfe2b45563a7",
+   "metadata": {},
+   "source": [
+    "## scikit- learn Design"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8ccf40cc-d2ca-44d2-9a29-af3ec3017e2e",
+   "metadata": {},
+   "source": [
+    "##### primarly there are three types of objects in it.\n",
+    "1. Estimators - it estimates some parameters based on the given dataset ex- imputer()\n",
+    "                 It has a fit() method and transform method .\n",
+    "   fit method - fits the dataset and calculates internal parameters .\n",
+    " 2. Transfromers -  transform method takes input and returns output based on the learning from fit().\n",
+    "                    it also has a convenience function called fit_transform() which fits and then transforms .\n",
+    "3. Predictors - Linear regression model is an example of predictors. fit() and predicte() are two common function . it also gives score() function      which will evaluate the predictions ."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "82e27f99-a8fb-4b22-a98f-f1adca5a1796",
+   "metadata": {},
+   "source": [
+    "## Feature Scaling"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "265526c9-7c48-4ae3-ac3f-91c6f71810a5",
+   "metadata": {},
+   "source": [
+    " Primarily, two types of feature scaling methods :\n",
+    "1. Min-max scaling (Normalization)\n",
+    "   (value - min)/(max - min)\n",
+    "   Sklearn provides a class called MinMaxScaler for this\n",
+    "\n",
+    "2. Standardization \n",
+    "   (value - mean)/std\n",
+    "   Sklearn provides a class called StandardScaler for this\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4e8657b1-ad04-4176-b9b7-be976bcee3f1",
+   "metadata": {},
+   "source": [
+    "## Creating a Pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "d7e80b2f-fdc1-4a44-b8a0-3d7e42476c01",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.pipeline import Pipeline\n",
+    "from sklearn.preprocessing import StandardScaler\n",
+    "my_pipeline = Pipeline([\n",
+    "    ('imputer', SimpleImputer(strategy=\"median\")),\n",
+    "    # .........  add as many you want in your pipeline\n",
+    "    ('std_scaler', StandardScaler()),\n",
+    "])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "id": "5decabae-fb10-4a0e-96e3-7a75c18e637d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataset_num_tr = my_pipeline.fit_transform(dataset_tr)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "id": "88ec1498-4f77-4378-b5c7-9a326a0c55d2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[ 1.26769848,  1.37418084,  0.45903108, ..., -0.70326861,\n",
+       "        -0.10235757, -0.70503221],\n",
+       "       [ 0.15292711,  0.17175282, -0.71640266, ..., -0.70326861,\n",
+       "         0.94590151, -0.00429995],\n",
+       "       [-1.0955769 ,  1.29335298, -0.01315171, ..., -0.70326861,\n",
+       "        -0.80188991, -0.00429995],\n",
+       "       ...,\n",
+       "       [ 1.998238  , -0.66013848, -1.1283068 , ..., -0.70326861,\n",
+       "         0.35654812, -0.70503221],\n",
+       "       [-1.92990892,  0.21352902,  0.5594955 , ...,  0.68809015,\n",
+       "         0.09825126, -0.00429995],\n",
+       "       [ 0.14394507,  0.80384489, -0.03324459, ..., -0.70326861,\n",
+       "        -1.47283809,  2.09789685]], shape=(8800, 13))"
+      ]
+     },
+     "execution_count": 39,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset_num_tr"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "id": "3c672253-01a3-413c-b462-704d6294d8bc",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(8800, 13)"
+      ]
+     },
+     "execution_count": 40,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset_num_tr.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fedb5119-ea08-4e7a-979a-b24669a50df9",
+   "metadata": {},
+   "source": [
+    "## Slecting a Desired model for Placement Prediction"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "id": "a6d1d2a2-3b3d-48ae-84de-c8836e36448b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style>#sk-container-id-1 {\n",
+       "  /* Definition of color scheme common for light and dark mode */\n",
+       "  --sklearn-color-text: #000;\n",
+       "  --sklearn-color-text-muted: #666;\n",
+       "  --sklearn-color-line: gray;\n",
+       "  /* Definition of color scheme for unfitted estimators */\n",
+       "  --sklearn-color-unfitted-level-0: #fff5e6;\n",
+       "  --sklearn-color-unfitted-level-1: #f6e4d2;\n",
+       "  --sklearn-color-unfitted-level-2: #ffe0b3;\n",
+       "  --sklearn-color-unfitted-level-3: chocolate;\n",
+       "  /* Definition of color scheme for fitted estimators */\n",
+       "  --sklearn-color-fitted-level-0: #f0f8ff;\n",
+       "  --sklearn-color-fitted-level-1: #d4ebff;\n",
+       "  --sklearn-color-fitted-level-2: #b3dbfd;\n",
+       "  --sklearn-color-fitted-level-3: cornflowerblue;\n",
+       "\n",
+       "  /* Specific color for light theme */\n",
+       "  --sklearn-color-text-on-default-background: var(--sg-text-color, var(--theme-code-foreground, var(--jp-content-font-color1, black)));\n",
+       "  --sklearn-color-background: var(--sg-background-color, var(--theme-background, var(--jp-layout-color0, white)));\n",
+       "  --sklearn-color-border-box: var(--sg-text-color, var(--theme-code-foreground, var(--jp-content-font-color1, black)));\n",
+       "  --sklearn-color-icon: #696969;\n",
+       "\n",
+       "  @media (prefers-color-scheme: dark) {\n",
+       "    /* Redefinition of color scheme for dark theme */\n",
+       "    --sklearn-color-text-on-default-background: var(--sg-text-color, var(--theme-code-foreground, var(--jp-content-font-color1, white)));\n",
+       "    --sklearn-color-background: var(--sg-background-color, var(--theme-background, var(--jp-layout-color0, #111)));\n",
+       "    --sklearn-color-border-box: var(--sg-text-color, var(--theme-code-foreground, var(--jp-content-font-color1, white)));\n",
+       "    --sklearn-color-icon: #878787;\n",
+       "  }\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 {\n",
+       "  color: var(--sklearn-color-text);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 pre {\n",
+       "  padding: 0;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 input.sk-hidden--visually {\n",
+       "  border: 0;\n",
+       "  clip: rect(1px 1px 1px 1px);\n",
+       "  clip: rect(1px, 1px, 1px, 1px);\n",
+       "  height: 1px;\n",
+       "  margin: -1px;\n",
+       "  overflow: hidden;\n",
+       "  padding: 0;\n",
+       "  position: absolute;\n",
+       "  width: 1px;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-dashed-wrapped {\n",
+       "  border: 1px dashed var(--sklearn-color-line);\n",
+       "  margin: 0 0.4em 0.5em 0.4em;\n",
+       "  box-sizing: border-box;\n",
+       "  padding-bottom: 0.4em;\n",
+       "  background-color: var(--sklearn-color-background);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-container {\n",
+       "  /* jupyter's `normalize.less` sets `[hidden] { display: none; }`\n",
+       "     but bootstrap.min.css set `[hidden] { display: none !important; }`\n",
+       "     so we also need the `!important` here to be able to override the\n",
+       "     default hidden behavior on the sphinx rendered scikit-learn.org.\n",
+       "     See: https://github.com/scikit-learn/scikit-learn/issues/21755 */\n",
+       "  display: inline-block !important;\n",
+       "  position: relative;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-text-repr-fallback {\n",
+       "  display: none;\n",
+       "}\n",
+       "\n",
+       "div.sk-parallel-item,\n",
+       "div.sk-serial,\n",
+       "div.sk-item {\n",
+       "  /* draw centered vertical line to link estimators */\n",
+       "  background-image: linear-gradient(var(--sklearn-color-text-on-default-background), var(--sklearn-color-text-on-default-background));\n",
+       "  background-size: 2px 100%;\n",
+       "  background-repeat: no-repeat;\n",
+       "  background-position: center center;\n",
+       "}\n",
+       "\n",
+       "/* Parallel-specific style estimator block */\n",
+       "\n",
+       "#sk-container-id-1 div.sk-parallel-item::after {\n",
+       "  content: \"\";\n",
+       "  width: 100%;\n",
+       "  border-bottom: 2px solid var(--sklearn-color-text-on-default-background);\n",
+       "  flex-grow: 1;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-parallel {\n",
+       "  display: flex;\n",
+       "  align-items: stretch;\n",
+       "  justify-content: center;\n",
+       "  background-color: var(--sklearn-color-background);\n",
+       "  position: relative;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-parallel-item {\n",
+       "  display: flex;\n",
+       "  flex-direction: column;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-parallel-item:first-child::after {\n",
+       "  align-self: flex-end;\n",
+       "  width: 50%;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-parallel-item:last-child::after {\n",
+       "  align-self: flex-start;\n",
+       "  width: 50%;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-parallel-item:only-child::after {\n",
+       "  width: 0;\n",
+       "}\n",
+       "\n",
+       "/* Serial-specific style estimator block */\n",
+       "\n",
+       "#sk-container-id-1 div.sk-serial {\n",
+       "  display: flex;\n",
+       "  flex-direction: column;\n",
+       "  align-items: center;\n",
+       "  background-color: var(--sklearn-color-background);\n",
+       "  padding-right: 1em;\n",
+       "  padding-left: 1em;\n",
+       "}\n",
+       "\n",
+       "\n",
+       "/* Toggleable style: style used for estimator/Pipeline/ColumnTransformer box that is\n",
+       "clickable and can be expanded/collapsed.\n",
+       "- Pipeline and ColumnTransformer use this feature and define the default style\n",
+       "- Estimators will overwrite some part of the style using the `sk-estimator` class\n",
+       "*/\n",
+       "\n",
+       "/* Pipeline and ColumnTransformer style (default) */\n",
+       "\n",
+       "#sk-container-id-1 div.sk-toggleable {\n",
+       "  /* Default theme specific background. It is overwritten whether we have a\n",
+       "  specific estimator or a Pipeline/ColumnTransformer */\n",
+       "  background-color: var(--sklearn-color-background);\n",
+       "}\n",
+       "\n",
+       "/* Toggleable label */\n",
+       "#sk-container-id-1 label.sk-toggleable__label {\n",
+       "  cursor: pointer;\n",
+       "  display: flex;\n",
+       "  width: 100%;\n",
+       "  margin-bottom: 0;\n",
+       "  padding: 0.5em;\n",
+       "  box-sizing: border-box;\n",
+       "  text-align: center;\n",
+       "  align-items: start;\n",
+       "  justify-content: space-between;\n",
+       "  gap: 0.5em;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 label.sk-toggleable__label .caption {\n",
+       "  font-size: 0.6rem;\n",
+       "  font-weight: lighter;\n",
+       "  color: var(--sklearn-color-text-muted);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 label.sk-toggleable__label-arrow:before {\n",
+       "  /* Arrow on the left of the label */\n",
+       "  content: \"▸\";\n",
+       "  float: left;\n",
+       "  margin-right: 0.25em;\n",
+       "  color: var(--sklearn-color-icon);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {\n",
+       "  color: var(--sklearn-color-text);\n",
+       "}\n",
+       "\n",
+       "/* Toggleable content - dropdown */\n",
+       "\n",
+       "#sk-container-id-1 div.sk-toggleable__content {\n",
+       "  display: none;\n",
+       "  text-align: left;\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-0);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-toggleable__content.fitted {\n",
+       "  /* fitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-0);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-toggleable__content pre {\n",
+       "  margin: 0.2em;\n",
+       "  border-radius: 0.25em;\n",
+       "  color: var(--sklearn-color-text);\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-0);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-toggleable__content.fitted pre {\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-0);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {\n",
+       "  /* Expand drop-down */\n",
+       "  display: block;\n",
+       "  width: 100%;\n",
+       "  overflow: visible;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {\n",
+       "  content: \"▾\";\n",
+       "}\n",
+       "\n",
+       "/* Pipeline/ColumnTransformer-specific style */\n",
+       "\n",
+       "#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {\n",
+       "  color: var(--sklearn-color-text);\n",
+       "  background-color: var(--sklearn-color-unfitted-level-2);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-label.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {\n",
+       "  background-color: var(--sklearn-color-fitted-level-2);\n",
+       "}\n",
+       "\n",
+       "/* Estimator-specific style */\n",
+       "\n",
+       "/* Colorize estimator box */\n",
+       "#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-2);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-estimator.fitted input.sk-toggleable__control:checked~label.sk-toggleable__label {\n",
+       "  /* fitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-2);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-label label.sk-toggleable__label,\n",
+       "#sk-container-id-1 div.sk-label label {\n",
+       "  /* The background is the default theme color */\n",
+       "  color: var(--sklearn-color-text-on-default-background);\n",
+       "}\n",
+       "\n",
+       "/* On hover, darken the color of the background */\n",
+       "#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {\n",
+       "  color: var(--sklearn-color-text);\n",
+       "  background-color: var(--sklearn-color-unfitted-level-2);\n",
+       "}\n",
+       "\n",
+       "/* Label box, darken color on hover, fitted */\n",
+       "#sk-container-id-1 div.sk-label.fitted:hover label.sk-toggleable__label.fitted {\n",
+       "  color: var(--sklearn-color-text);\n",
+       "  background-color: var(--sklearn-color-fitted-level-2);\n",
+       "}\n",
+       "\n",
+       "/* Estimator label */\n",
+       "\n",
+       "#sk-container-id-1 div.sk-label label {\n",
+       "  font-family: monospace;\n",
+       "  font-weight: bold;\n",
+       "  display: inline-block;\n",
+       "  line-height: 1.2em;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-label-container {\n",
+       "  text-align: center;\n",
+       "}\n",
+       "\n",
+       "/* Estimator-specific */\n",
+       "#sk-container-id-1 div.sk-estimator {\n",
+       "  font-family: monospace;\n",
+       "  border: 1px dotted var(--sklearn-color-border-box);\n",
+       "  border-radius: 0.25em;\n",
+       "  box-sizing: border-box;\n",
+       "  margin-bottom: 0.5em;\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-0);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-estimator.fitted {\n",
+       "  /* fitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-0);\n",
+       "}\n",
+       "\n",
+       "/* on hover */\n",
+       "#sk-container-id-1 div.sk-estimator:hover {\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-2);\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 div.sk-estimator.fitted:hover {\n",
+       "  /* fitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-2);\n",
+       "}\n",
+       "\n",
+       "/* Specification for estimator info (e.g. \"i\" and \"?\") */\n",
+       "\n",
+       "/* Common style for \"i\" and \"?\" */\n",
+       "\n",
+       ".sk-estimator-doc-link,\n",
+       "a:link.sk-estimator-doc-link,\n",
+       "a:visited.sk-estimator-doc-link {\n",
+       "  float: right;\n",
+       "  font-size: smaller;\n",
+       "  line-height: 1em;\n",
+       "  font-family: monospace;\n",
+       "  background-color: var(--sklearn-color-background);\n",
+       "  border-radius: 1em;\n",
+       "  height: 1em;\n",
+       "  width: 1em;\n",
+       "  text-decoration: none !important;\n",
+       "  margin-left: 0.5em;\n",
+       "  text-align: center;\n",
+       "  /* unfitted */\n",
+       "  border: var(--sklearn-color-unfitted-level-1) 1pt solid;\n",
+       "  color: var(--sklearn-color-unfitted-level-1);\n",
+       "}\n",
+       "\n",
+       ".sk-estimator-doc-link.fitted,\n",
+       "a:link.sk-estimator-doc-link.fitted,\n",
+       "a:visited.sk-estimator-doc-link.fitted {\n",
+       "  /* fitted */\n",
+       "  border: var(--sklearn-color-fitted-level-1) 1pt solid;\n",
+       "  color: var(--sklearn-color-fitted-level-1);\n",
+       "}\n",
+       "\n",
+       "/* On hover */\n",
+       "div.sk-estimator:hover .sk-estimator-doc-link:hover,\n",
+       ".sk-estimator-doc-link:hover,\n",
+       "div.sk-label-container:hover .sk-estimator-doc-link:hover,\n",
+       ".sk-estimator-doc-link:hover {\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-3);\n",
+       "  color: var(--sklearn-color-background);\n",
+       "  text-decoration: none;\n",
+       "}\n",
+       "\n",
+       "div.sk-estimator.fitted:hover .sk-estimator-doc-link.fitted:hover,\n",
+       ".sk-estimator-doc-link.fitted:hover,\n",
+       "div.sk-label-container:hover .sk-estimator-doc-link.fitted:hover,\n",
+       ".sk-estimator-doc-link.fitted:hover {\n",
+       "  /* fitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-3);\n",
+       "  color: var(--sklearn-color-background);\n",
+       "  text-decoration: none;\n",
+       "}\n",
+       "\n",
+       "/* Span, style for the box shown on hovering the info icon */\n",
+       ".sk-estimator-doc-link span {\n",
+       "  display: none;\n",
+       "  z-index: 9999;\n",
+       "  position: relative;\n",
+       "  font-weight: normal;\n",
+       "  right: .2ex;\n",
+       "  padding: .5ex;\n",
+       "  margin: .5ex;\n",
+       "  width: min-content;\n",
+       "  min-width: 20ex;\n",
+       "  max-width: 50ex;\n",
+       "  color: var(--sklearn-color-text);\n",
+       "  box-shadow: 2pt 2pt 4pt #999;\n",
+       "  /* unfitted */\n",
+       "  background: var(--sklearn-color-unfitted-level-0);\n",
+       "  border: .5pt solid var(--sklearn-color-unfitted-level-3);\n",
+       "}\n",
+       "\n",
+       ".sk-estimator-doc-link.fitted span {\n",
+       "  /* fitted */\n",
+       "  background: var(--sklearn-color-fitted-level-0);\n",
+       "  border: var(--sklearn-color-fitted-level-3);\n",
+       "}\n",
+       "\n",
+       ".sk-estimator-doc-link:hover span {\n",
+       "  display: block;\n",
+       "}\n",
+       "\n",
+       "/* \"?\"-specific style due to the `<a>` HTML tag */\n",
+       "\n",
+       "#sk-container-id-1 a.estimator_doc_link {\n",
+       "  float: right;\n",
+       "  font-size: 1rem;\n",
+       "  line-height: 1em;\n",
+       "  font-family: monospace;\n",
+       "  background-color: var(--sklearn-color-background);\n",
+       "  border-radius: 1rem;\n",
+       "  height: 1rem;\n",
+       "  width: 1rem;\n",
+       "  text-decoration: none;\n",
+       "  /* unfitted */\n",
+       "  color: var(--sklearn-color-unfitted-level-1);\n",
+       "  border: var(--sklearn-color-unfitted-level-1) 1pt solid;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 a.estimator_doc_link.fitted {\n",
+       "  /* fitted */\n",
+       "  border: var(--sklearn-color-fitted-level-1) 1pt solid;\n",
+       "  color: var(--sklearn-color-fitted-level-1);\n",
+       "}\n",
+       "\n",
+       "/* On hover */\n",
+       "#sk-container-id-1 a.estimator_doc_link:hover {\n",
+       "  /* unfitted */\n",
+       "  background-color: var(--sklearn-color-unfitted-level-3);\n",
+       "  color: var(--sklearn-color-background);\n",
+       "  text-decoration: none;\n",
+       "}\n",
+       "\n",
+       "#sk-container-id-1 a.estimator_doc_link.fitted:hover {\n",
+       "  /* fitted */\n",
+       "  background-color: var(--sklearn-color-fitted-level-3);\n",
+       "}\n",
+       "\n",
+       ".estimator-table summary {\n",
+       "    padding: .5rem;\n",
+       "    font-family: monospace;\n",
+       "    cursor: pointer;\n",
+       "}\n",
+       "\n",
+       ".estimator-table details[open] {\n",
+       "    padding-left: 0.1rem;\n",
+       "    padding-right: 0.1rem;\n",
+       "    padding-bottom: 0.3rem;\n",
+       "}\n",
+       "\n",
+       ".estimator-table .parameters-table {\n",
+       "    margin-left: auto !important;\n",
+       "    margin-right: auto !important;\n",
+       "}\n",
+       "\n",
+       ".estimator-table .parameters-table tr:nth-child(odd) {\n",
+       "    background-color: #fff;\n",
+       "}\n",
+       "\n",
+       ".estimator-table .parameters-table tr:nth-child(even) {\n",
+       "    background-color: #f6f6f6;\n",
+       "}\n",
+       "\n",
+       ".estimator-table .parameters-table tr:hover {\n",
+       "    background-color: #e0e0e0;\n",
+       "}\n",
+       "\n",
+       ".estimator-table table td {\n",
+       "    border: 1px solid rgba(106, 105, 104, 0.232);\n",
+       "}\n",
+       "\n",
+       ".user-set td {\n",
+       "    color:rgb(255, 94, 0);\n",
+       "    text-align: left;\n",
+       "}\n",
+       "\n",
+       ".user-set td.value pre {\n",
+       "    color:rgb(255, 94, 0) !important;\n",
+       "    background-color: transparent !important;\n",
+       "}\n",
+       "\n",
+       ".default td {\n",
+       "    color: black;\n",
+       "    text-align: left;\n",
+       "}\n",
+       "\n",
+       ".user-set td i,\n",
+       ".default td i {\n",
+       "    color: black;\n",
+       "}\n",
+       "\n",
+       ".copy-paste-icon {\n",
+       "    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NDggNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNy4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjUgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTIwOCAwTDMzMi4xIDBjMTIuNyAwIDI0LjkgNS4xIDMzLjkgMTQuMWw2Ny45IDY3LjljOSA5IDE0LjEgMjEuMiAxNC4xIDMzLjlMNDQ4IDMzNmMwIDI2LjUtMjEuNSA0OC00OCA0OGwtMTkyIDBjLTI2LjUgMC00OC0yMS41LTQ4LTQ4bDAtMjg4YzAtMjYuNSAyMS41LTQ4IDQ4LTQ4ek00OCAxMjhsODAgMCAwIDY0LTY0IDAgMCAyNTYgMTkyIDAgMC0zMiA2NCAwIDAgNDhjMCAyNi41LTIxLjUgNDgtNDggNDhMNDggNTEyYy0yNi41IDAtNDgtMjEuNS00OC00OEwwIDE3NmMwLTI2LjUgMjEuNS00OCA0OC00OHoiLz48L3N2Zz4=);\n",
+       "    background-repeat: no-repeat;\n",
+       "    background-size: 14px 14px;\n",
+       "    background-position: 0;\n",
+       "    display: inline-block;\n",
+       "    width: 14px;\n",
+       "    height: 14px;\n",
+       "    cursor: pointer;\n",
+       "}\n",
+       "</style><body><div id=\"sk-container-id-1\" class=\"sk-top-container\"><div class=\"sk-text-repr-fallback\"><pre>RandomForestRegressor()</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class=\"sk-container\" hidden><div class=\"sk-item\"><div class=\"sk-estimator fitted sk-toggleable\"><input class=\"sk-toggleable__control sk-hidden--visually\" id=\"sk-estimator-id-1\" type=\"checkbox\" checked><label for=\"sk-estimator-id-1\" class=\"sk-toggleable__label fitted sk-toggleable__label-arrow\"><div><div>RandomForestRegressor</div></div><div><a class=\"sk-estimator-doc-link fitted\" rel=\"noreferrer\" target=\"_blank\" href=\"https://scikit-learn.org/1.7/modules/generated/sklearn.ensemble.RandomForestRegressor.html\">?<span>Documentation for RandomForestRegressor</span></a><span class=\"sk-estimator-doc-link fitted\">i<span>Fitted</span></span></div></label><div class=\"sk-toggleable__content fitted\" data-param-prefix=\"\">\n",
+       "        <div class=\"estimator-table\">\n",
+       "            <details>\n",
+       "                <summary>Parameters</summary>\n",
+       "                <table class=\"parameters-table\">\n",
+       "                  <tbody>\n",
+       "                    \n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('n_estimators',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">n_estimators&nbsp;</td>\n",
+       "            <td class=\"value\">100</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('criterion',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">criterion&nbsp;</td>\n",
+       "            <td class=\"value\">&#x27;squared_error&#x27;</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('max_depth',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">max_depth&nbsp;</td>\n",
+       "            <td class=\"value\">None</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('min_samples_split',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">min_samples_split&nbsp;</td>\n",
+       "            <td class=\"value\">2</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('min_samples_leaf',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">min_samples_leaf&nbsp;</td>\n",
+       "            <td class=\"value\">1</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('min_weight_fraction_leaf',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">min_weight_fraction_leaf&nbsp;</td>\n",
+       "            <td class=\"value\">0.0</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('max_features',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">max_features&nbsp;</td>\n",
+       "            <td class=\"value\">1.0</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('max_leaf_nodes',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">max_leaf_nodes&nbsp;</td>\n",
+       "            <td class=\"value\">None</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('min_impurity_decrease',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">min_impurity_decrease&nbsp;</td>\n",
+       "            <td class=\"value\">0.0</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('bootstrap',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">bootstrap&nbsp;</td>\n",
+       "            <td class=\"value\">True</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('oob_score',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">oob_score&nbsp;</td>\n",
+       "            <td class=\"value\">False</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('n_jobs',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">n_jobs&nbsp;</td>\n",
+       "            <td class=\"value\">None</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('random_state',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">random_state&nbsp;</td>\n",
+       "            <td class=\"value\">None</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('verbose',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">verbose&nbsp;</td>\n",
+       "            <td class=\"value\">0</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('warm_start',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">warm_start&nbsp;</td>\n",
+       "            <td class=\"value\">False</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('ccp_alpha',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">ccp_alpha&nbsp;</td>\n",
+       "            <td class=\"value\">0.0</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('max_samples',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">max_samples&nbsp;</td>\n",
+       "            <td class=\"value\">None</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "\n",
+       "        <tr class=\"default\">\n",
+       "            <td><i class=\"copy-paste-icon\"\n",
+       "                 onclick=\"copyToClipboard('monotonic_cst',\n",
+       "                          this.parentElement.nextElementSibling)\"\n",
+       "            ></i></td>\n",
+       "            <td class=\"param\">monotonic_cst&nbsp;</td>\n",
+       "            <td class=\"value\">None</td>\n",
+       "        </tr>\n",
+       "    \n",
+       "                  </tbody>\n",
+       "                </table>\n",
+       "            </details>\n",
+       "        </div>\n",
+       "    </div></div></div></div></div><script>function copyToClipboard(text, element) {\n",
+       "    // Get the parameter prefix from the closest toggleable content\n",
+       "    const toggleableContent = element.closest('.sk-toggleable__content');\n",
+       "    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';\n",
+       "    const fullParamName = paramPrefix ? `${paramPrefix}${text}` : text;\n",
+       "\n",
+       "    const originalStyle = element.style;\n",
+       "    const computedStyle = window.getComputedStyle(element);\n",
+       "    const originalWidth = computedStyle.width;\n",
+       "    const originalHTML = element.innerHTML.replace('Copied!', '');\n",
+       "\n",
+       "    navigator.clipboard.writeText(fullParamName)\n",
+       "        .then(() => {\n",
+       "            element.style.width = originalWidth;\n",
+       "            element.style.color = 'green';\n",
+       "            element.innerHTML = \"Copied!\";\n",
+       "\n",
+       "            setTimeout(() => {\n",
+       "                element.innerHTML = originalHTML;\n",
+       "                element.style = originalStyle;\n",
+       "            }, 2000);\n",
+       "        })\n",
+       "        .catch(err => {\n",
+       "            console.error('Failed to copy:', err);\n",
+       "            element.style.color = 'red';\n",
+       "            element.innerHTML = \"Failed!\";\n",
+       "            setTimeout(() => {\n",
+       "                element.innerHTML = originalHTML;\n",
+       "                element.style = originalStyle;\n",
+       "            }, 2000);\n",
+       "        });\n",
+       "    return false;\n",
+       "}\n",
+       "\n",
+       "document.querySelectorAll('.fa-regular.fa-copy').forEach(function(element) {\n",
+       "    const toggleableContent = element.closest('.sk-toggleable__content');\n",
+       "    const paramPrefix = toggleableContent ? toggleableContent.dataset.paramPrefix : '';\n",
+       "    const paramName = element.parentElement.nextElementSibling.textContent.trim();\n",
+       "    const fullParamName = paramPrefix ? `${paramPrefix}${paramName}` : paramName;\n",
+       "\n",
+       "    element.setAttribute('title', fullParamName);\n",
+       "});\n",
+       "</script></body>"
+      ],
+      "text/plain": [
+       "RandomForestRegressor()"
+      ]
+     },
+     "execution_count": 41,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.tree import DecisionTreeRegressor\n",
+    "from sklearn.linear_model import LinearRegression\n",
+    "from sklearn.ensemble import RandomForestRegressor\n",
+    "#model = DecisionTreeRegressor()\n",
+    "#model = LinearRegression()\n",
+    "model = RandomForestRegressor()\n",
+    "model.fit(dataset_num_tr, dataset_labels)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "id": "052c017e-b320-4969-94fb-0a1385d59512",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "some_data = dataset.iloc[10:15]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "id": "e77daaef-b75e-40ef-bf31-e4c198347eb8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "some_labels = dataset_labels.iloc[10:15]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "id": "ae53b5fb-50d6-4a34-ae1f-bb9941e5abc3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "some_data = some_data[my_pipeline.feature_names_in_]\n",
+    "prepared_data = my_pipeline.transform(some_data)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "id": "3747531c-5042-4e62-bb24-4d077800c6c5",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([51.676, 58.477, 55.202, 60.046, 54.916])"
+      ]
+     },
+     "execution_count": 45,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "model.predict(prepared_data)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 46,
+   "id": "bca40918-eb19-45a5-8bc6-a88b3985a45c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[51.0, 58.0, 56.0, 60.9, 54.0]"
+      ]
+     },
+     "execution_count": 46,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "list(some_labels)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e57d3f4f-8094-441b-8ad6-f1e723204669",
+   "metadata": {},
+   "source": [
+    "## Evaluating the model "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "id": "38c44f93-e832-484f-921e-76db2afc81d6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.metrics import mean_squared_error #error bata rha hai \n",
+    "dataset_predictions = model.predict(dataset_num_tr)\n",
+    "mse = mean_squared_error(dataset_labels, dataset_predictions)\n",
+    "rmse = np.sqrt(mse)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "id": "6319d8ab-8ec2-4b84-93f3-72f8b207ceac",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "np.float64(0.6940654079898966)"
+      ]
+     },
+     "execution_count": 48,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "rmse #0.00000000000000000000000000000006884604263747013"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "832b9322-fada-4284-bca1-c584d7227985",
+   "metadata": {},
+   "source": [
+    "## Using better evalaution technique - cross validation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "id": "dcab6b09-ef2b-4466-af58-79000144f249",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 1 2 3 4 5 6 7 8 9 10 \n",
+    "from sklearn.model_selection import cross_val_score\n",
+    "scores = cross_val_score(model, dataset_num_tr, dataset_labels, scoring=\"neg_mean_squared_error\", cv=10)\n",
+    "rmse_scores = np.sqrt(-scores)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "id": "db6f8b80-a3e2-4415-9862-1c11da9c33d9",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([1.83765257, 1.88204143, 1.81375867, 1.85969175, 1.84742163,\n",
+       "       1.90782812, 1.7967525 , 1.92914655, 1.79377053, 1.80577167])"
+      ]
+     },
+     "execution_count": 50,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "rmse_scores"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "id": "bb5f91b3-8582-4f91-a521-764fe61f9321",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def print_scores(scores):\n",
+    "     print(\"Scores:\", scores)\n",
+    "     print(\"Mean:\", scores.mean())\n",
+    "     print(\"Standard deviation:\", scores.std())\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "id": "233f8f58-655e-44b2-b99a-823ea9483d2d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Scores: [1.83765257 1.88204143 1.81375867 1.85969175 1.84742163 1.90782812\n",
+      " 1.7967525  1.92914655 1.79377053 1.80577167]\n",
+      "Mean: 1.8473835420265938\n",
+      "Standard deviation: 0.04481755073428167\n"
+     ]
+    }
+   ],
+   "source": [
+    "print_scores(rmse_scores) #Mean: 3.1094631438138847\n",
+    "#Standard deviation: 0.07771072810799753"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d0ddb944-4140-4d65-95e1-4ac59a3362d2",
+   "metadata": {},
+   "source": [
+    "## Saving the model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "id": "e710784f-1eb8-468f-85b2-bd7a759035d9",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['Placement.joblib']"
+      ]
+     },
+     "execution_count": 53,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from joblib import dump, load\n",
+    "dump(model, 'Placement.joblib')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b6d5e577-9775-4f17-8d4a-7c9fe9a98870",
+   "metadata": {},
+   "source": [
+    "## Testing the model on test data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "id": "c6c0d236-ea28-4fa6-9a40-0b7ff9081f4b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "X_test = strat_test_set.drop(\"Probability\", axis=1)\n",
+    "X_test = X_test.drop(columns='Branch')\n",
+    "Y_test = strat_test_set[\"Probability\"].copy()\n",
+    "X_test_prepared = my_pipeline.transform(X_test)\n",
+    "final_predictions = model.predict(X_test_prepared)\n",
+    "final_mse = mean_squared_error(Y_test, final_predictions)\n",
+    "final_rmse = np.sqrt(final_mse)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "id": "65fa9ac8-79f8-434b-851a-c4cf4ce9ff12",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "np.float64(1.7975097242119051)"
+      ]
+     },
+     "execution_count": 55,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "final_rmse"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "id": "c080d62f-a432-4397-a81b-91715509f4e0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#print(list(final_predictions), list(Y_test))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 57,
+   "id": "4003af6c-05c7-4810-b667-a59f83173ace",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[-0.47082589, -0.12612966, -0.88719218, -1.01720711, -0.7006691 ,\n",
+       "        -2.3418742 , -0.76848744,  0.46558923, -1.27254981, -0.00683779,\n",
+       "        -0.70326861,  0.97292653,  0.69643232],\n",
+       "       [-1.4688307 ,  1.25793402,  0.40879887, -1.01720711,  0.00960484,\n",
+       "        -0.17727023,  1.29737824,  0.17673544, -0.0299259 , -1.00971431,\n",
+       "         0.68809015,  1.513427  , -0.70503221],\n",
+       "       [-0.44787178, -0.4167467 , -1.43974651, -0.00574693,  2.8507006 ,\n",
+       "        -0.28481543,  0.85116208,  0.60348689,  0.22281117, -1.00971431,\n",
+       "         0.68809015, -0.32063661,  0.69643232],\n",
+       "       [ 0.78067214,  0.2725606 , -0.04329103, -0.00574693,  0.00960484,\n",
+       "         0.69336637, -0.6980679 ,  1.33476231,  0.47863039,  0.99603872,\n",
+       "         0.68809015, -0.7192557 ,  1.39716458],\n",
+       "       [-2.03070741, -0.79999793, -0.25426632, -1.01720711, -0.7006691 ,\n",
+       "         0.2720906 ,  0.88501763,  0.23210344,  0.80533928, -0.00683779,\n",
+       "         0.68809015,  0.09045558,  0.69643232]])"
+      ]
+     },
+     "execution_count": 57,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "prepared_data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2468e9c6-9f41-4cf7-b826-d0bdb059b550",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
